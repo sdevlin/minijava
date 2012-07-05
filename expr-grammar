@@ -1,0 +1,29 @@
+expr : expr ( '&&' | '<' | '+' | '-' | '*' ) expr
+     | expr '[' expr ']'
+     | expr '.' 'length'
+     | expr '.' id '(' ( expr ( ',' expr )* )? ')'
+     | <int>
+     | 'true'
+     | 'false'
+     | id
+     | 'this'
+     | 'new' 'int' '[' expr ']'
+     | 'new' id '(' ')'
+     | '!' expr
+     | '(' expr ')'
+
+expr : <int> expr-rest
+     | 'true' expr-rest
+     | 'false' expr-rest
+     | 'this' expr-rest
+     | 'new' 'int' '[' expr ']' expr-rest
+     | 'new' id '(' ')' expr-rest
+     | '!' expr
+     | '(' expr ')' expr-rest
+     | id expr-rest
+
+expr-rest : <empty>
+          | ( '&&' | '<' | '+' | '-' | '*' ) expr
+          | '.' 'length' expr-rest
+          | '.' id '(' ( expr ( ',' expr )* )? ')' expr-rest
+          | '[' expr ']' expr-rest
