@@ -1,17 +1,3 @@
-expr : expr ( '&&' | '<' | '+' | '-' | '*' ) expr
-     | expr '[' expr ']'
-     | expr '.' 'length'
-     | expr '.' id '(' ( expr ( ',' expr )* )? ')'
-     | <int>
-     | 'true'
-     | 'false'
-     | id
-     | 'this'
-     | 'new' 'int' '[' expr ']'
-     | 'new' id '(' ')'
-     | '!' expr
-     | '(' expr ')'
-
 expr : <int> expr-rest
      | 'true' expr-rest
      | 'false' expr-rest
