@@ -107,10 +107,10 @@ class Parser():
         self._expect('class')
         class_id = self.parse_id()
         self._expect('{', 'public', 'static', 'void')
-        if self.parse_id() != 'main':
+        if self.parse_id()[1] != 'main':
             raise Exception('expected main')
         self._expect('(')
-        if self.parse_id() != 'String':
+        if self.parse_id()[1] != 'String':
             raise Exception('expected String')
         self._expect('[', ']')
         args_id = self.parse_id()
@@ -258,7 +258,8 @@ class Parser():
 
     def parse_expr_rest(self, left):
         if self._peek() in ['&&', '<', '+', '-', '*']:
-            return ('expr-bin-op', self._next(), left, self.parse_expr())
+            return ('expr-bin-op', ('op', self._next()),
+                    left, self.parse_expr())
         elif self._accept('.'):
             if self._accept('length'):
                 return self.parse_expr_rest(('expr-arr-length', left))
@@ -283,14 +284,15 @@ class Parser():
     def parse_id(self):
         token = self._next()
         if isinstance(token, Symbol):
-            return token
+            return ('id', token)
         else:
             raise Exception('expected ID got %s' % token)
 
 
 if __name__ == '__main__':
-    from glob import iglob
-    for filename in iglob('test/*.java'):
+    from sys import argv
+    filenames = argv[1:]
+    for filename in filenames:
         with open(filename) as f:
             prog = f.read()
         lexer = Lexer(prog)
@@ -298,7 +300,6 @@ if __name__ == '__main__':
         parser = Parser(tokens)
         try:
             ast = parser.parse()
-            print(filename)
             pprint(ast)
         except Exception as e:
             print(filename)
