@@ -413,7 +413,7 @@ class Interpreter():
             index = self._eval_expr(expr[2], env)
             return array[index]
         elif expr_type == 'expr-new':
-
+            pass
         elif expr_type == 'expr-arr-new':
             length = self._eval_expr(expr[1], env)
             return [0 for _ in range(length)]
