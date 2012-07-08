@@ -1,0 +1,3 @@
+This is an interpreter for well-formed* Minijava programs.
+
+* This is a fancy way of saying I didn't work very hard on error-checking.
