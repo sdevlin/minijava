@@ -310,57 +310,75 @@ class Parser():
             raise Exception('expected ID got %s' % token)
 
 
-def build_table(type_, elems):
-    table = {}
-    for elem in map(type_, elems):
-        if elem.id in table:
-            raise Exception('duplicate ' + type_.__name__ + ': ' + elem.id)
-        table[elem.id] = elem
-    return table
+def build_var_table(var_decls):
+    var_table = {}
+    type_defaults = {
+        'int': 0,
+        'boolean': False
+        }
+    for var_decl in var_decls:
+        var_table[var_decl['id']] = type_defaults.get(var_decl['type'], None)
+    return var_table
 
 
-class Program():
-    def __init__(self, ast):
-        self.entry_point = ast['main']['entry-point']
-        self.classes = build_table(Class, ast['classes'])
-        for class_ in self.classes.values():
-            if class_.parent:
-                class_.parent = self.classes[class_.parent]
+class Instance():
+    def __init__(self, ast, class_name):
+        self.classes = []
+        while class_name:
+            for class_ in ast['classes']:
+                if class_['id'] == class_name:
+                    self.classes.append(class_)
+                    class_name = class_['parent']
+                    break
+        self.ivars = {}
+        for class_ in self.classes:
+            self.ivars = dict(list(self.ivars.items()) +
+                              list(build_var_table(class_['ivars']).items()))
+
+    def call(self, method_name, args):
+        for class_ in self.classes:
+            for method in class_['methods']:
+                if method['id'] == method_name:
+                    return Call(method, args)
 
 
-class Class():
-    def __init__(self, class_decl):
-        self.id = class_decl['id']
-        self.parent = class_decl['parent']
-        self.ivars = build_table(Variable, class_decl['ivars'])
-        self.methods = build_table(Method, class_decl['methods'])
-
-
-class Variable():
-    def __init__(self, var_decl):
-        self.type = var_decl['type']
-        self.id = var_decl['id']
-
-
-class Method():
-    def __init__(self, method_decl):
-        self.type = method_decl['type']
-        self.id = method_decl['id']
-        self.params = build_table(Variable, method_decl['params'])
-        self.locals = build_table(Variable, method_decl['locals'])
-        self.body = method_decl['body']
-        self.return_ = method_decl['return']
+class Call():
+    def __init__(self, method, args):
+        self.method = method
+        self.params = build_var_table(method['params'])
+        for i in range(len(method['params'])):
+            param = method['params'][i]
+            arg = args[i]
+            self.params[param['id']] = arg
+        self.locals = build_var_table(method['locals'])
 
 
 class Environment():
-    def __init__(self):
-        pass # need ivars, params, locals, this
+    def __init__(self, instance, call):
+        self.instance = instance
+        self.call = call
 
     def lookup(self, name):
-        pass
+        if name == 'this':
+            return self.instance
+        elif name in self.call.locals:
+            return self.call.locals[name]
+        elif name in self.call.params:
+            return self.call.params[name]
+        elif name in self.instance.ivars:
+            return self.instance.ivars[name]
+        else:
+            raise Exception('unknown name: ' + name)
 
     def update(self, name, value):
-        pass
+        if name in self.call.locals:
+            self.call.locals[name] = value
+        elif name in self.call.params:
+            self.call.params[name] = value
+        elif name in self.instance.ivars:
+            self.instance.ivars[name] = value
+        else:
+            raise Exception('unknown name: ' + name)
 
 
 class Interpreter():
@@ -372,11 +390,11 @@ class Interpreter():
         '&&': operator.and_
         }
 
-    def __init__(self, program):
-        self.program = program
+    def __init__(self, ast):
+        self.ast = ast
 
     def evaluate(self):
-        self._eval_stmt(self.program.entry_point, None)
+        self._eval_stmt(self.ast['main']['entry-point'], None)
 
     def _eval_stmt(self, stmt, env):
         stmt_type = stmt[0]
@@ -413,7 +431,7 @@ class Interpreter():
             index = self._eval_expr(expr[2], env)
             return array[index]
         elif expr_type == 'expr-new':
-            pass
+            return Instance(self.ast, expr[1])
         elif expr_type == 'expr-arr-new':
             length = self._eval_expr(expr[1], env)
             return [0 for _ in range(length)]
@@ -426,8 +444,13 @@ class Interpreter():
             left = self._eval_expr(expr[2], env)
             return bin_op(left, self._eval_expr(expr[3], env))
         elif expr_type == 'expr-call':
-            context = self._eval_expr(expr[1], env)
-
+            instance = self._eval_expr(expr[1], env)
+            args = list(map(lambda e: self._eval_expr(e, env), expr[3]))
+            call = instance.call(expr[2], args)
+            new_env = Environment(instance, call)
+            for stmt in call.method['body']:
+                self._eval_stmt(stmt, new_env)
+            return self._eval_expr(call.method['return'], new_env)
         else:
             raise Exception('unknown expr type: ' + expr_type)
 
@@ -442,9 +465,8 @@ if __name__ == '__main__':
         tokens = list(lexer.lex())
         parser = Parser(tokens)
         ast = parser.parse()
-        pprint(ast)
         try:
-            Program(ast)
+            Interpreter(ast).evaluate()
         except Exception as e:
             import traceback
             traceback.print_exc()
