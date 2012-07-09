@@ -200,7 +200,7 @@ class Parser():
         if self._accept('int'):
             if self._accept('['):
                 self._expect(']')
-                return 'int_array'
+                return 'int-array'
             else:
                 return 'int'
         elif self._accept('boolean'):
