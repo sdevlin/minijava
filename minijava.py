@@ -460,11 +460,11 @@ if __name__ == '__main__':
     for filename in filenames:
         with open(filename) as f:
             prog = f.read()
-        lexer = Lexer(prog)
-        tokens = list(lexer.lex())
-        parser = Parser(tokens)
-        ast = parser.parse()
         try:
+            lexer = Lexer(prog)
+            tokens = list(lexer.lex())
+            parser = Parser(tokens)
+            ast = parser.parse()
             Interpreter(ast).evaluate()
         except Exception as e:
             import traceback
