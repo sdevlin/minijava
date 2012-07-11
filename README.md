@@ -7,3 +7,5 @@ Here are some problems:
 * Some (irrelevant) name resolution conflicts are ignored.
 * Operator precedence is ignored.
 * Multiline comments are not handled.
+
+That said, it runs all the provided test programs correctly. It also runs the program I wrote (test/fibonacci.java) correctly.
