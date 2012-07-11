@@ -1,4 +1,4 @@
-This is an interpreter for MiniJava programs.
+This is an interpreter for [MiniJava](http://www.cambridge.org/us/features/052182060X/) programs.
 
 It's not complete, but I'm probably done working on it.
 
