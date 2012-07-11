@@ -458,9 +458,9 @@ if __name__ == '__main__':
     from sys import argv
     filenames = argv[1:]
     for filename in filenames:
-        with open(filename) as f:
-            prog = f.read()
         try:
+            with open(filename) as f:
+                prog = f.read()
             lexer = Lexer(prog)
             tokens = list(lexer.lex())
             parser = Parser(tokens)
